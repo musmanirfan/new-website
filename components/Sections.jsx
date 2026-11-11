@@ -1,8 +1,11 @@
 "use client";
 import { useRef, useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "motion/react";
-import { site, about, partners, services, process, projects, pricing, showreel, testimonials, nav, socials } from "./data";
-import { Reveal, Label, Button, Media, Arrow, Roll, FitText } from "./ui";
+import { site, about, partners, services, process, projects, websites, pricing, showreel, testimonials, nav, socials } from "./data";
+import { Reveal, Label, Button, Media, Arrow, Roll, FitText, Icon, SocialLinks } from "./ui";
+import Swarm from "./Swarm";
+import SiteBuild, { VideoPreview } from "./SiteBuild";
+import siteBoxes from "./siteBoxes.json";
 
 const ease = [0.22, 1, 0.36, 1];
 
@@ -26,8 +29,19 @@ export function About() {
     <section id="about" className="sec about">
       <motion.div className="overlap" style={{ y: fy, skewY: skew }} />
       <div className="container about-grid">
-        <Reveal y={60} scale={0.8} className="about-img">
-          <Media src={about.image} tone="b" label="About image" />
+        <Reveal y={60} scale={0.8} className="about-img portrait">
+          <span className="pt-word" aria-hidden>AI</span>
+          <span className="pt-ring" aria-hidden />
+          <img className="pt-photo" src={about.image} alt="Muhammad Usman, AI Automation and CMS Developer in Karachi" width="621" height="801" loading="lazy" decoding="async" />
+          {["tl", "tr", "bl", "br"].map((c) => <span key={c} className={`pt-corner ${c}`} aria-hidden />)}
+          <span className="pt-status"><i /> Open to work</span>
+          <span className="pt-chip c1" aria-hidden>n8n</span>
+          <span className="pt-chip c2" aria-hidden>GoHighLevel</span>
+          <span className="pt-chip c3" aria-hidden>Claude Code</span>
+          <div className="pt-card">
+            <b>Muhammad Usman</b>
+            <small>AI Automation &amp; CMS Developer · Karachi</small>
+          </div>
         </Reveal>
         <div className="about-copy">
           <Reveal><Label>{about.label}</Label></Reveal>
@@ -44,8 +58,11 @@ export function About() {
             ))}
           </div>
           <Reveal className="about-foot">
-            <p className="lead">{about.body}</p>
-            <Button>Contact Us</Button>
+            <div className="about-body">
+              <p className="lead">{about.body}</p>
+              <SocialLinks items={socials} />
+            </div>
+            <Button>Let's Talk</Button>
           </Reveal>
         </div>
       </div>
@@ -59,8 +76,8 @@ export function Partners() {
     <section className="sec partners">
       <div className="container">
         <Reveal className="partners-head">
-          <Label>Valuable Partners</Label>
-          <p className="partners-sub">Who Trust Us!</p>
+          <Label>Where I've Worked</Label>
+          <p className="partners-sub">Teams & Companies</p>
         </Reveal>
         <div className="marquee fade-edges">
           <div className="marquee-track" style={{ "--dur": "35s" }}>
@@ -84,7 +101,7 @@ function ServiceRow({ s, idx, open, onToggle }) {
         <h3 className="svc-num">{String(idx + 1).padStart(2, "0")}.</h3>
         <h3 className="svc-title">{s.title}</h3>
         <motion.span className="svc-plus" animate={{ rotate: open ? 45 : 0 }} transition={{ duration: 0.5, ease }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" stroke="#fff" strokeWidth="2"><path d="M10 3v14M3 10h14" /></svg>
+          <svg width="20" height="20" viewBox="0 0 20 20" stroke="var(--on-accent)" strokeWidth="2"><path d="M10 3v14M3 10h14" /></svg>
         </motion.span>
       </button>
       <AnimatePresence initial={false}>
@@ -99,7 +116,7 @@ function ServiceRow({ s, idx, open, onToggle }) {
             <div className="svc-inner">
               <p className="muted svc-desc">{s.desc}</p>
               <motion.div className="svc-img" initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.7, ease, delay: 0.1 }}>
-                <Media src={s.image} tone={["a", "b", "c", "d"][idx % 4]} label="" />
+                {s.video ? <VideoPreview src={s.video} poster={s.poster} /> : <Media src={s.image} tone={["a", "b", "c", "d"][idx % 4]} label="" />}
               </motion.div>
               <ul className="svc-list">
                 {s.items.map((it, k) => (
@@ -122,7 +139,7 @@ export function Services() {
   return (
     <section id="services" className="sec services">
       <div className="container">
-        <SectionHead label="Services" title={<>Strategic<br />Creative Services</>} meta={`${services.length} Services`} />
+        <SectionHead label="Services" title={<>What I<br />Build</>} meta={`${services.length} Services`} />
         <div className="svc-list-wrap" onMouseLeave={() => window.matchMedia("(hover:hover)").matches && setOpen(-1)}>
           {services.map((s, k) => (
             <ServiceRow key={k} s={s} idx={k} open={open === k} onToggle={(force) => setOpen(force === true ? k : open === k ? -1 : k)} />
@@ -140,7 +157,7 @@ export function Process() {
   return (
     <section className="sec process">
       <div className="container">
-        <SectionHead label="Work Process" title="From Vision To Reality" center sticky />
+        <SectionHead label="Work Process" title="From Idea To Live System" center sticky />
         <div className="process-wrap">
           {process.map((p, k) => (
             <div className="process-col" key={k} style={{ "--off": `${offsets[k]}px` }}>
@@ -169,11 +186,14 @@ function ProjectCard({ p, idx }) {
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const iy = useTransform(scrollYProgress, [0, 1], ["-12%", "12%"]);
   const right = idx % 2 === 1;
+  // AI case studies have no public link: render a plain card (no arrow, no click)
+  const Tag = p.url ? "a" : "div";
+  const linkProps = p.url ? { href: p.url, target: "_blank", rel: "noreferrer" } : {};
   return (
     <div className={`proj ${right ? "is-right" : ""}`}>
       <Reveal className="proj-year display-sm" delay={0.2}>{p.year}</Reveal>
       <Reveal y={30} scale={0.8} className="proj-card">
-        <a href="#" ref={ref} className="proj-link">
+        <Tag {...linkProps} ref={ref} className={`proj-link ${p.url ? "" : "no-link"}`}>
           <div className="proj-tags">
             {p.tags.map((t) => (
               <span className="tag" key={t}>{t}</span>
@@ -181,15 +201,15 @@ function ProjectCard({ p, idx }) {
           </div>
           <div className="proj-img">
             <motion.div style={{ y: iy }} className="proj-img-inner">
-              <Media src={p.image} tone={["c", "a", "d"][idx % 3]} label="Project image" />
+              {p.video ? <VideoPreview src={p.video} poster={p.poster} /> : <Media src={p.image} tone={["c", "a", "d"][idx % 3]} label={p.image ? "" : "Demo video coming soon"} />}
             </motion.div>
-            <span className="proj-view"><Arrow size={22} /></span>
+            {p.url && <span className="proj-view"><Arrow size={22} /></span>}
           </div>
           <div className="proj-foot">
             <p className="proj-title">{p.title}</p>
             <p className="muted">{p.desc}</p>
           </div>
-        </a>
+        </Tag>
       </Reveal>
     </div>
   );
@@ -199,7 +219,7 @@ export function Projects() {
   return (
     <section id="projects" className="sec projects">
       <div className="container">
-        <SectionHead label="Projects" title={<>Trusted By<br />Clients Worldwide</>} meta={`${projects.length} Projects`} />
+        <SectionHead label="Projects" title={<>AI Agents &<br />Automation</>} meta={`${projects.length} Systems`} />
         <div className="proj-list">
           {projects.map((p, k) => (
             <ProjectCard key={k} p={p} idx={k} />
@@ -210,15 +230,80 @@ export function Projects() {
   );
 }
 
+/* ───────────── WEBSITES (live web projects grid) ───────────── */
+// One of each platform first, the rest behind "Load more"
+const FEATURED = ["Aceestar Services", "Koma", "Streamline Pet Solutions", "HiiClub Social", "Janice Greenwald", "Gravy Work"];
+const ORDERED = [...FEATURED.map((t) => websites.find((w) => w.title === t)).filter(Boolean), ...websites.filter((w) => !FEATURED.includes(w.title))];
+const STEP = 6;
+
+export function Websites() {
+  const [shown, setShown] = useState(STEP);
+  const list = ORDERED.slice(0, shown);
+  const more = ORDERED.length - shown;
+  const showLess = () => {
+    setShown(STEP);
+    const el = document.getElementById("websites");
+    if (window.__lenis) window.__lenis.scrollTo(el, { duration: 1 });
+    else el.scrollIntoView();
+  };
+  return (
+    <section id="websites" className="sec websites">
+      <div className="container">
+        <SectionHead label="Web Projects" title={<>Live Websites<br />I've Built</>} meta={`${websites.length} Live Sites`} />
+        <div className="web-grid">
+          {list.map((w, k) => (
+            <Reveal key={w.url} y={30} scale={0.8} delay={0.05 * (k % 3)} className="web-card">
+              <a href={w.url} target="_blank" rel="noopener noreferrer" className="web-link" aria-label={w.title + ", live website (opens in a new tab)"}>
+                <div className="web-img">
+                  {w.video ? (
+                    <VideoPreview src={w.video} poster={w.poster} />
+                  ) : w.image ? (
+                    <SiteBuild src={w.image} boxes={siteBoxes[w.image.split("/").pop().replace(".jpg", "")]} seed={k} />
+                  ) : (
+                    <Media src={w.image} tone={["c", "a", "d"][k % 3]} label="" />
+                  )}
+                  <span className="proj-view"><Arrow size={22} /></span>
+                </div>
+                <div className="web-tags">
+                  {w.stack.map((t) => (
+                    <span className="tag" key={t}>{t}</span>
+                  ))}
+                  {w.ai && <span className="tag tag-ai">AI-assisted</span>}
+                </div>
+                <h3 className="proj-title">{w.title}</h3>
+                <p className="muted small">{w.desc}</p>
+              </a>
+            </Reveal>
+          ))}
+        </div>
+        <div className="web-more">
+          <p className="muted small">Showing {list.length} of {ORDERED.length} live websites</p>
+          {more > 0 ? (
+            <button type="button" className="btn btn-light" onClick={() => setShown((n) => n + STEP)}>
+              <span className="btn-text"><Roll>{"Load more (+" + Math.min(STEP, more) + ")"}</Roll></span>
+              <span className="btn-icon"><span className="btn-icon-roll"><Arrow rotate={135} /><Arrow rotate={135} /></span></span>
+            </button>
+          ) : (
+            <button type="button" className="btn btn-light" onClick={showLess}>
+              <span className="btn-text"><Roll>Show less</Roll></span>
+              <span className="btn-icon"><span className="btn-icon-roll"><Arrow rotate={-45} /><Arrow rotate={-45} /></span></span>
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ───────────── PRICING ───────────── */
 export function Pricing() {
   const [yearly, setYearly] = useState(false);
   return (
-    <section className="sec pricing">
+    <section id="skills" className="sec pricing">
       <div className="container narrow">
         <Reveal className="sec-head is-center">
-          <Label>Pricing</Label>
-          <h2 className="display">Collaboration Options</h2>
+          <Label>Skills</Label>
+          <h2 className="display">Skills & Tools</h2>
         </Reveal>
         <Reveal y={30} scale={0.8} className="price-box">
           {pricing.map((p, k) => (
@@ -248,7 +333,7 @@ export function Pricing() {
                   </div>
                 )}
               </div>
-              <p className="incl">What's included:</p>
+              <p className="incl">{p.incl || "What's included:"}</p>
               <ul className="feat">
                 {p.features.map((f) => (
                   <li key={f}>
@@ -257,7 +342,7 @@ export function Pricing() {
                   </li>
                 ))}
               </ul>
-              <Button variant={p.button}>Start a Project</Button>
+              <Button variant={p.button}>{p.cta || "Start a Project"}</Button>
             </div>
           ))}
         </Reveal>
@@ -271,12 +356,14 @@ export function Showreel() {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
   const p = useSpring(scrollYProgress, { stiffness: 120, damping: 30, mass: 0.6 });
-  // measured: holder scale .2→1, inner image 1.8→1, titles ±1200px → 0
-  const hs = useTransform(p, [0.3, 0.98], [0.2, 1], { clamp: true });
-  const is = useTransform(p, [0.3, 0.98], [1.8, 1], { clamp: true });
-  const lx = useTransform(p, [0.3, 0.98], [-1200, 0], { clamp: true });
-  const rx = useTransform(p, [0.3, 0.98], [1200, 0], { clamp: true });
-  const br = useTransform(p, [0.3, 0.98], [20, 16]);
+  // holder scale .2→1 (same zoom feel, shorter scroll), inner 1.15→1 so nothing gets cropped,
+  // titles fly in, then fade out so they never sit on top of the swarm scene
+  const hs = useTransform(p, [0.08, 0.75], [0.2, 1], { clamp: true });
+  const is = useTransform(p, [0.08, 0.75], [1.15, 1], { clamp: true });
+  const lx = useTransform(p, [0.08, 0.5], [-1200, 0], { clamp: true });
+  const rx = useTransform(p, [0.08, 0.5], [1200, 0], { clamp: true });
+  const to = useTransform(p, [0.5, 0.7], [1, 0], { clamp: true });
+  const br = useTransform(p, [0.08, 0.75], [20, 16]);
   return (
     <section className="showreel" ref={ref}>
       <div className="showreel-sticky">
@@ -284,13 +371,15 @@ export function Showreel() {
           <motion.div className="showreel-inner" style={{ scale: is }}>
             {showreel.video ? (
               <video src={showreel.video} autoPlay muted loop playsInline />
+            ) : showreel.swarm ? (
+              <Swarm />
             ) : (
               <Media src={showreel.image} tone="d" label="Showreel video" />
             )}
           </motion.div>
         </motion.div>
-        <motion.p className="showreel-t left display" style={{ x: lx }}>{showreel.left}</motion.p>
-        <motion.p className="showreel-t right display" style={{ x: rx }}>{showreel.right}</motion.p>
+        <motion.p className="showreel-t left display" style={{ x: lx, opacity: to }}>{showreel.left}</motion.p>
+        <motion.p className="showreel-t right display" style={{ x: rx, opacity: to }}>{showreel.right}</motion.p>
       </div>
     </section>
   );
@@ -303,9 +392,9 @@ export function Testimonials() {
   const go = (d) => set(([c]) => [(c + d + n) % n, d]);
   const t = testimonials[i];
   return (
-    <section className="sec testi">
+    <section id="experience" className="sec testi">
       <div className="container">
-        <SectionHead label="Testimonials" title={<>Trusted By<br />Clients Worldwide</>} meta="000 Clients" />
+        <SectionHead label="Experience" title={<>Where I've<br />Worked</>} meta={`${testimonials.length} Roles`} />
         <Reveal y={30} scale={0.8} className="testi-card">
           <AnimatePresence mode="popLayout" initial={false} custom={dir}>
             <motion.div
@@ -318,7 +407,11 @@ export function Testimonials() {
               transition={{ duration: 0.7, ease }}
             >
               <div className="testi-img">
-                <Media src={t.image} tone={["a", "c", "b"][i % 3]} label="Client photo" />
+                <Media src={t.image} tone={["a", "c", "b"][i % 3]} label="">
+                  <div className="testi-logo">
+                    {t.logo ? <img src={t.logo} alt={t.name} /> : <span className="display-sm">{t.name}</span>}
+                  </div>
+                </Media>
               </div>
               <div className="testi-copy">
                 <h3 className="testi-quote">{t.quote}</h3>
@@ -328,7 +421,7 @@ export function Testimonials() {
                     <p className="muted small">{t.role}</p>
                   </div>
                   <div className="stars">
-                    <span>★★★★★</span>
+                    <span>{t.tag}</span>
                     <p>{t.rating}</p>
                   </div>
                 </div>
@@ -346,24 +439,61 @@ export function Testimonials() {
 }
 
 /* ───────────── CTA / CONTACT ───────────── */
+// Contact form: sends through Web3Forms when NEXT_PUBLIC_WEB3FORMS_KEY is set (free, delivers to your inbox),
+// otherwise falls back to opening the visitor's email app with the message filled in.
+import { FORM_KEY } from "./config";
+
 export function CTA() {
+  const [status, setStatus] = useState("idle"); // idle | sending | sent | error
+  const label = { idle: "Send Message", sending: "Sending…", sent: "✓ Message sent", error: "Failed, try WhatsApp" }[status];
+  async function submit(e) {
+    e.preventDefault();
+    const formEl = e.currentTarget;
+    const f = new FormData(formEl);
+    if (f.get("botcheck")) return; // spam bots fill hidden fields
+    const name = `${f.get("first") || ""} ${f.get("last") || ""}`.trim();
+    const subject = `Portfolio enquiry${name ? " from " + name : ""}`;
+    if (!FORM_KEY) {
+      const body = encodeURIComponent(`${f.get("message") || ""}\n\n${name}\n${f.get("email") || ""}`);
+      window.location.href = `mailto:${site.email}?subject=${encodeURIComponent(subject)}&body=${body}`;
+      return;
+    }
+    setStatus("sending");
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ access_key: FORM_KEY, subject, from_name: "Portfolio website", name, email: f.get("email"), message: f.get("message") || "(no message)" }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      setStatus("sent");
+      formEl.reset();
+    } catch {
+      setStatus("error");
+    }
+    setTimeout(() => setStatus("idle"), 5000);
+  }
   return (
     <section id="contact" className="sec cta">
       <Reveal y={30} scale={0.8} className="cta-box">
         <div className="cta-bg">
           <Media tone="hero-a" label="" />
         </div>
-        <form className="cta-form glass" onSubmit={(e) => e.preventDefault()}>
-          <Label>Contact Us</Label>
+        <form className="cta-form glass" onSubmit={submit}>
+          <input type="checkbox" name="botcheck" tabIndex={-1} autoComplete="off" style={{ display: "none" }} />
+          <Label>Contact</Label>
           <h3 className="cta-title">Let's Talk</h3>
           <div className="cta-row">
-            <label><span>First Name</span><input placeholder="Jane" /></label>
-            <label><span>Last Name</span><input placeholder="Smith" /></label>
+            <label><span>First Name</span><input name="first" placeholder="Jane" required /></label>
+            <label><span>Last Name</span><input name="last" placeholder="Smith" /></label>
           </div>
-          <label><span>Email Address</span><input type="email" placeholder="jane@mail.com" /></label>
-          <button className="btn btn-accent btn-full" type="submit">
-            <span className="btn-text"><Roll>Start a Project</Roll></span>
+          <label><span>Email Address</span><input name="email" type="email" placeholder="jane@mail.com" required /></label>
+          <label><span>Message</span><input name="message" placeholder="Tell me about your project or role" /></label>
+          <button className="btn btn-accent btn-full" type="submit" disabled={status === "sending"}>
+            <span className="btn-text"><Roll>{label}</Roll></span>
           </button>
+          <div className="cta-social"><span className="muted small">Or reach me on</span><SocialLinks items={socials} size={16} /></div>
         </form>
       </Reveal>
     </section>
@@ -381,42 +511,48 @@ export function Footer() {
             <span className="logo-mark">{site.brand[0]}</span>
             <span className="logo-word">{site.brand}</span>
           </div>
-          <p className="muted">Newsletter</p>
-          <p className="lead">Stay updated with our latest projects and insights.</p>
-          <form className="news" onSubmit={(e) => e.preventDefault()}>
-            <input placeholder={site.email} />
-            <button className="btn btn-accent btn-sm"><span className="btn-text"><Roll>Subscribe</Roll></span></button>
-          </form>
+          <p className="muted">Resume</p>
+          <p className="lead">Open to AI automation roles. Grab my CV or reach out directly.</p>
+          <div className="cv-card">
+            <span className="cv-file"><Icon name="File" size={22} /></span>
+            <span className="cv-meta">
+              <b>Muhammad_Usman_CV.pdf</b>
+              <small className="muted">2 pages · AI Automation</small>
+            </span>
+            <a className="btn btn-accent cv-btn" href={site.cv} download="Muhammad_Usman_CV.pdf">
+              <span className="btn-text"><Roll>Download CV</Roll></span>
+              <span className="btn-icon">
+                <span className="btn-icon-roll btn-icon-roll-y"><Icon name="Download" /><Icon name="Download" /></span>
+              </span>
+            </a>
+          </div>
           <div className="footer-contacts">
-            <div>
-              <p className="muted">For New Project</p>
-              <a href={`mailto:${site.email}`}><Roll>{site.email}</Roll></a>
-              <a href="#"><Roll>{site.phone}</Roll></a>
-            </div>
-            <div>
-              <p className="muted">For General Inquiries</p>
-              <a href={`mailto:${site.email}`}><Roll>{site.email}</Roll></a>
-            </div>
+            <a className="fc-item" href={`mailto:${site.email}`}><span className="fc-ic"><Icon name="Mail" /></span><span><small className="muted">Email</small><Roll>{site.email}</Roll></span></a>
+            <a className="fc-item" href={site.phoneHref}><span className="fc-ic"><Icon name="Phone" /></span><span><small className="muted">Phone</small><Roll>{site.phone}</Roll></span></a>
+            <a className="fc-item" href={site.whatsapp} target="_blank" rel="noreferrer"><span className="fc-ic"><Icon name="WhatsApp" /></span><span><small className="muted">WhatsApp</small><Roll>Chat with me</Roll></span></a>
           </div>
         </div>
         <div className="footer-cols">
           <div>
             <p className="muted">Menu</p>
-            {nav.slice(0, 4).map((n) => (
+            {nav.map((n) => (
               <a key={n} href={`#${n.toLowerCase()}`}><Roll>{n}</Roll></a>
             ))}
           </div>
           <div>
             <p className="muted">Social Media</p>
             {socials.map((s) => (
-              <a key={s} href="#"><Roll>{s}</Roll></a>
+              <a key={s.name} className="soc" href={s.url} target="_blank" rel="noopener noreferrer" aria-label={`${s.name} (opens in a new tab)`}>
+                <span className="soc-ic"><Icon name={s.name} size={17} /></span>
+                <Roll>{s.name}</Roll>
+              </a>
             ))}
           </div>
           <div>
             <p className="muted">Location</p>
-            <p>{site.address}</p>
+            <p className="loc"><span className="soc-ic"><Icon name="Pin" size={17} /></span>{site.address}</p>
           </div>
-          <p className="footer-copy">© {site.brand}. All rights reserved.</p>
+          <p className="footer-copy">© {new Date().getFullYear()} {site.fullName}. All rights reserved.</p>
         </div>
       </div>
       <motion.div className="footer-word-mask" initial="hide" whileInView="show" viewport={{ once: true, amount: 0.3 }}>
@@ -425,7 +561,7 @@ export function Footer() {
           variants={{ hide: { y: "60%", opacity: 0 }, show: { y: "0%", opacity: 1 } }}
           transition={{ type: "spring", stiffness: 80, damping: 18, delay: 0.1 }}
         >
-          <FitText>{site.brand}<sup>®</sup></FitText>
+          <FitText>{site.brand}</FitText>
         </motion.div>
       </motion.div>
     </footer>

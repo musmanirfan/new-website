@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "motion/react";
-import { site, hero, nav } from "./data";
-import { Media, Roll, Arrow, FitText } from "./ui";
+import { site, hero, nav, socials } from "./data";
+import { Media, Roll, Arrow, FitText, SocialLinks } from "./ui";
 import { scrollToId } from "./SmoothScroll";
 
 const ease = [0.22, 1, 0.36, 1];
@@ -91,13 +91,11 @@ export function MenuOverlay({ open, onClose }) {
               <div>
                 <p className="muted">Contact</p>
                 <a href={`mailto:${site.email}`}>{site.email}</a>
-                <a href="#">{site.phone}</a>
+                <a href={site.phoneHref}>{site.phone}</a>
               </div>
               <div>
                 <p className="muted">Socials</p>
-                <a href="#">Youtube</a>
-                <a href="#">Instagram</a>
-                <a href="#">Twitter / X</a>
+                <SocialLinks items={socials} labels />
               </div>
             </motion.div>
           </motion.aside>
@@ -180,12 +178,11 @@ export default function Hero() {
 
         <div className="hero-bottom">
           <div className="hero-word-mask">
-            <motion.h2 className="hero-word" initial={{ y: "100%", opacity: 0.2 }} animate={{ y: "0%", opacity: 1 }} transition={{ duration: 1.4, ease, delay: 0.35 }}>
+            <motion.div className="hero-word" aria-hidden="true" initial={{ y: "100%", opacity: 0.2 }} animate={{ y: "0%", opacity: 1 }} transition={{ duration: 1.4, ease, delay: 0.35 }}>
               <FitText>
                 {site.brand}
-                <sup>®</sup>
               </FitText>
-            </motion.h2>
+            </motion.div>
           </div>
           <motion.div className="hero-row" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease, delay: 1.1 }}>
             <p className="hero-intro">{hero.intro}</p>
